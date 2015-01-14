@@ -42,11 +42,11 @@ function notify () {
     local __message=$1
     local __title=$2
 
-    if ! which terminal-notifier;
+    if which terminal-notifier;
         then
-            # osascript -e 'display notification "$__message" with title "$__title"'
-        else
             terminal-notifier -message "$__message" -title "$__title"
+        # else
+            # osascript -e 'display notification "$__message" with title "$__title"'
     fi
 }
 
@@ -57,10 +57,20 @@ function show_help () {
     echo "Usage:    pinger [-h] [-a]"
     echo " "
     echo "          -h, --help      Display help."
-    echo "          -a, --add       Add cronjob."
+    echo "          -a, --add       Add cronjob. -- not implemented yet."
+    echo "          -r, --remove    Remove cronjob. -- not implemented yet."
+    echo "          -c <int>        Set the number of packages that will be send. -- not implemented yet."
     echo " "
 }
 
 # show_help
 
 check_host_available $1
+
+# while getopts ":h" opt; do
+#   case $opt in
+#     h)
+#       show_help
+#       ;;
+#   esac
+# done
