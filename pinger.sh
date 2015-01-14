@@ -20,7 +20,7 @@ function ping_host () {
         then
             IFS=',' read -a ping_result_components <<< "${ping_result}"
         else
-            terminal-notifier -message "$__hostname" -title "Ping failed"
+            notify $__hostname "Ping failed!"
     fi
 }
 
@@ -33,7 +33,20 @@ function check_host_available () {
 
     if [ "$packages_sent" -ne "$packages_received" ]
         then
-            terminal-notifier -message "$__hostname" -title "Ping failed"
+            notify $__hostname "Ping failed!"
+    fi
+}
+
+function notify () {
+    # Get parameters
+    local __message=$1
+    local __title=$2
+
+    if ! which terminal-notifier;
+        then
+            osascript -e 'display notification "$__message" with title "$__title"'
+        else
+            terminal-notifier -message "$__message" -title "$__title"
     fi
 }
 
