@@ -44,10 +44,23 @@ function notify () {
 
     if ! which terminal-notifier;
         then
-            osascript -e 'display notification "$__message" with title "$__title"'
+            # osascript -e 'display notification "$__message" with title "$__title"'
         else
             terminal-notifier -message "$__message" -title "$__title"
     fi
 }
+
+function show_help () {
+    echo " "
+    echo "Pinger to check or a host is available or not. If it is not available, it will be shown with a notification."
+    echo " "
+    echo "Usage:    pinger [-h] [-a]"
+    echo " "
+    echo "          -h, --help      Display help."
+    echo "          -a, --add       Add cronjob."
+    echo " "
+}
+
+# show_help
 
 check_host_available $1
