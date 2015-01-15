@@ -2,7 +2,7 @@
 PATH=$PATH:/sbin:/usr/local/bin
 
 # Get parameters
-hostname=$1
+# hostname=$1
 
 function count_packages_received () {
     packages_received=$(echo ${ping_result_components[1]} | sed -e 's/[[:alpha:]]//g')
@@ -54,18 +54,36 @@ function show_help () {
     echo " "
     echo "Pinger to check or a host is available or not. If it is not available, it will be shown with a notification."
     echo " "
-    echo "Usage:    pinger [-h] [-a]"
+    echo "Usage:    pinger [-h] [-p HOSTNAME]"
     echo " "
     echo "          -h, --help      Display help."
-    echo "          -a, --add       Add cronjob. -- not implemented yet."
-    echo "          -r, --remove    Remove cronjob. -- not implemented yet."
-    echo "          -c <int>        Set the number of packages that will be send. -- not implemented yet."
+    # echo "          -a, --add       Add cronjob. -- not implemented yet."
+    # echo "          -c, --count     Set the number of packages that will be send. -- not implemented yet."
+    echo "          -p [HOSTNAME]   Hostname that will be pinged."
+    # echo "          -r, --remove    Remove cronjob. -- not implemented yet."
     echo " "
 }
 
 # show_help
 
-check_host_available $1
+# check_host_available $1
+
+# Parse the options
+OPTIND=1
+while getopts ":a:c:hp:r:" flag
+do
+    case "$flag" in
+        h|help)
+            shift;
+            show_help;;
+        p)
+            shift;
+            check_host_available $OPTARG;
+            shift;;
+    esac
+    # echo "flag: $flag" $OPTIND $OPTARG
+done
+
 
 # while getopts ":h" opt; do
 #   case $opt in
