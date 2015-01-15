@@ -1,29 +1,61 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/usr/local/bin
-version="0.2"
+version="0.3"
 
 function count_packages_received () {
-    packages_received=$(echo ${ping_result_components[1]} | sed -e 's/[[:alpha:]]//g')
+    packages_received=$(echo ${ping_package_transmission_components[1]} | sed -e 's/[[:alpha:]]//g')
 }
 
 function count_packages_sent () {
-    packages_sent=$(echo ${ping_result_components[0]} | sed -e 's/[[:alpha:]]//g')
+    packages_sent=$(echo ${ping_package_transmission_components[0]} | sed -e 's/[[:alpha:]]//g')
 }
 
 function ping_host () {
-    ping_result=$(ping -c $count -W $waittime $hostname | grep received)
+    ping_result=$(ping -c $count -W $waittime $hostname)
+}
+
+function set_ping_package_transmission_stats () {
+    local __package_transmission_stats=$(echo "$ping_result" | grep received)
     if [[ $ping_result == *"packet loss"* ]]
         then
-            IFS=',' read -a ping_result_components <<< "${ping_result}"
+            IFS=',' read -a ping_package_transmission_components <<< "${__package_transmission_stats}"
         else
             notify $hostname "Ping failed!"
     fi
+
+    count_packages_sent
+    count_packages_received
+}
+
+function set_min_package_time () {
+    min_package_time=$(echo ${package_result_stats_components[0]})
+}
+
+function set_avg_package_time () {
+    avg_package_time=$(echo ${package_result_stats_components[1]})
+}
+
+function set_max_package_time () {
+    max_package_time=$(echo ${package_result_stats_components[2]})
+}
+
+function set_ping_round_trip_stats () {
+    local __package_result_stats=$(echo "$ping_result" | grep round-trip | sed -e 's/.*= //' | sed 's/ ms//')
+    IFS='/' read -a package_result_stats_components <<< "${__package_result_stats}"
+
+    set_min_package_time
+    set_avg_package_time
+    set_max_package_time
+}
+
+function set_ping_stats () {
+    set_ping_package_transmission_stats
+    set_ping_round_trip_stats
 }
 
 function check_host_available () {
     ping_host
-    count_packages_sent
-    count_packages_received
+    set_ping_stats
 
     if [ "$packages_sent" -ne "$packages_received" ]
         then
@@ -77,6 +109,10 @@ Source:         https://github.com/MalcolmK/pinger
 PINGER_ABOUT
 }
 
+function execute () {
+    check_host_available
+}
+
 # Set default options
 set_default_options
 
@@ -93,4 +129,4 @@ do
     esac
 done
 
-if [ -n "$hostname" ]; then check_host_available; fi
+if [ -n "$hostname" ]; then execute; fi
