@@ -42,11 +42,10 @@ function notify () {
     local __message=$1
     local __title=$2
 
-    if which terminal-notifier;
-        then
-            terminal-notifier -message "$__message" -title "$__title"
-        # else
-            # osascript -e 'display notification "$__message" with title "$__title"'
+    if ! which terminal-notifier; then
+        osascript -e 'display notification "The terminal-notifier package is needed." with title "Missing package."'
+    else
+        terminal-notifier -message "$__message" -title "$__title"
     fi
 }
 
