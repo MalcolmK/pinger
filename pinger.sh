@@ -1,8 +1,6 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/usr/local/bin
-
-# Get parameters
-# hostname=$1
+version="0.2"
 
 function count_packages_received () {
     packages_received=$(echo ${ping_result_components[1]} | sed -e 's/[[:alpha:]]//g')
@@ -46,51 +44,53 @@ function notify () {
 }
 
 function show_help () {
-    echo " "
-    echo "Pinger to check or a host is available or not. If it is not available, it will be shown with a notification."
-    echo " "
-    echo "Usage:    pinger [-h] [-p hostname] [-W waittime]"
-    echo " "
-    echo "          -h, --help      Display help."
-    # echo "          -a, --add       Add cronjob. -- not implemented yet."
-    # echo "          -c, --count     Set the number of packages that will be send. -- not implemented yet."
-    echo "          -p [hostname]   Hostname that will be pinged."
-    # echo "          -r, --remove    Remove cronjob. -- not implemented yet."
-    # echo "          -W [waittime]   Time to wait in milliseconds for a reply for each sent package."
-    echo " "
+    cat <<PINGER_USAGE
+
+Pinger to check or a host is available or not. If it is not available, it will be shown with a notification.
+
+Usage:
+    pinger [OPTIONS]
+
+Options:
+    -c, --count [count]         Set the number of packages that will be send.
+    -h, --help                  Display help.
+    -p [hostname]               Hostname that will be pinged.
+    -v, --version               Display version number
+    -W, --wait [waittime]       Time to wait in milliseconds for a reply for each sent package.
+
+PINGER_USAGE
+}
+
+function set_default_options () {
+    count=1
+    waittime=1000
+}
+
+function show_about () {
+    cat <<PINGER_ABOUT
+
+Version:        $version
+Last updated:   2015/01/15
+Created by:     Malcolm Kindermans <malcolm.k.x@gmail.com>
+Source:         https://github.com/MalcolmK/pinger
+
+PINGER_ABOUT
 }
 
 # Set default options
-count=1
-waittime=1000
+set_default_options
 
-# Parse the options
+# Parse the passed parameters
 OPTIND=1
-while getopts ":a:c:hp:r:W:" flag
+while getopts "c:hp:vW:" flag
 do
     case "$flag" in
-        h|help)
-            shift;
-            show_help;;
-        p)
-            shift;
-            hostname=$OPTARG;
-            shift;;
-        # W)
-            # shift;
-            # waittime=$OPTARG;
-            # shift;;
+        h|help)     show_help; exit 0;;
+        c|count)    count=$OPTARG;;
+        p)          hostname=$OPTARG;;
+        v|version)  show_about; exit 0;;
+        W|wait)     waittime=$OPTARG;;
     esac
-    # echo "flag: $flag" $OPTIND $OPTARG
 done
 
 if [ -n "$hostname" ]; then check_host_available; fi
-
-
-# while getopts ":h" opt; do
-#   case $opt in
-#     h)
-#       show_help
-#       ;;
-#   esac
-# done
