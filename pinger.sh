@@ -1,21 +1,26 @@
 #!/bin/sh
 PATH=$PATH:/sbin:/usr/local/bin
-version="0.3"
+version="0.4"
 
 function count_packages_received () {
     packages_received=$(echo ${ping_package_transmission_components[1]} | sed -e 's/[[:alpha:]]//g')
+    debug "Packages received: $packages_received"
 }
 
 function count_packages_sent () {
     packages_sent=$(echo ${ping_package_transmission_components[0]} | sed -e 's/[[:alpha:]]//g')
+    debug "Packages sent: $packages_sent"
 }
 
 function ping_host () {
     ping_result=$(ping -c $count -W $waittime $hostname)
+    debug "Ping result: $ping_result"
 }
 
 function set_ping_package_transmission_stats () {
     local __package_transmission_stats=$(echo "$ping_result" | grep received)
+    debug "Package transmission statistics: $__package_transmission_stats"
+
     if [[ $ping_result == *"packet loss"* ]]
         then
             IFS=',' read -a ping_package_transmission_components <<< "${__package_transmission_stats}"
@@ -28,15 +33,18 @@ function set_ping_package_transmission_stats () {
 }
 
 function set_min_package_time () {
-    min_package_time=$(echo ${package_result_stats_components[0]})
+    local __tmp=$(echo ${package_result_stats_components[0]})
+    min_package_time=${__tmp%.*}
 }
 
 function set_avg_package_time () {
-    avg_package_time=$(echo ${package_result_stats_components[1]})
+    local __tmp=$(echo ${package_result_stats_components[1]})
+    avg_package_time=${__tmp%.*}
 }
 
 function set_max_package_time () {
-    max_package_time=$(echo ${package_result_stats_components[2]})
+    local __tmp=$(echo ${package_result_stats_components[2]})
+    max_package_time=${__tmp%.*}
 }
 
 function set_ping_round_trip_stats () {
@@ -84,11 +92,13 @@ Usage:
     pinger [OPTIONS]
 
 Options:
-    -c, --count [count]         Set the number of packages that will be send.
-    -h, --help                  Display help.
-    -p [hostname]               Hostname that will be pinged.
-    -v, --version               Display version number
-    -W, --wait [waittime]       Time to wait in milliseconds for a reply for each sent package.
+    -c [count]          Set the number of packages that will be send.
+    -d                  Provide debug information.
+    -h                  Display help.
+    -p [hostname]       Hostname that will be pinged.
+    -s [time]           Detect when the server responds slow. Give the max response time of the server in ms.
+    -v                  Display version number
+    -W [waittime]       Time to wait in milliseconds for a reply for each sent package.
 
 PINGER_USAGE
 }
@@ -109,8 +119,32 @@ Source:         https://github.com/MalcolmK/pinger
 PINGER_ABOUT
 }
 
+function check_slow_server () {
+    if [ -z "$avg_package_time" ]; then
+        debug "Average package time not provided"
+        return
+    fi
+
+    if [ $avg_package_time -gt $slow_server_time ]; then
+        notify "Server $hostname is responding slow" "Slow server"
+    fi
+}
+
 function execute () {
     check_host_available
+
+    if [ "$check_slow_server" ]; then
+        check_slow_server
+    fi
+}
+
+function debug () {
+    # Get parameters
+    local __message=$1
+
+    if [ "$debug_mode" ]; then
+        echo $__message
+    fi
 }
 
 # Set default options
@@ -118,14 +152,16 @@ set_default_options
 
 # Parse the passed parameters
 OPTIND=1
-while getopts "c:hp:vW:" flag
+while getopts "c:dhp:s:vW:" flag
 do
     case "$flag" in
-        h|help)     show_help; exit 0;;
-        c|count)    count=$OPTARG;;
-        p)          hostname=$OPTARG;;
-        v|version)  show_about; exit 0;;
-        W|wait)     waittime=$OPTARG;;
+        h) show_help; exit 0;;
+        c) count=$OPTARG;;
+        d) debug_mode=true;;
+        p) hostname=$OPTARG;;
+        s) check_slow_server=true; slow_server_time=$OPTARG;;
+        v) show_about; exit 0;;
+        W) waittime=$OPTARG;;
     esac
 done
 
