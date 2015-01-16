@@ -61,13 +61,15 @@ function set_ping_stats () {
     set_ping_round_trip_stats
 }
 
-function check_host_available () {
+function is_host_available () {
     ping_host
     set_ping_stats
 
     if [ "$packages_sent" -ne "$packages_received" ]
         then
-            notify $hostname "Ping failed!"
+            return 1
+        else
+            return 0
     fi
 }
 
@@ -131,7 +133,13 @@ function check_slow_server () {
 }
 
 function execute () {
-    check_host_available
+    if ! has_internet_connection; then
+        return
+    fi
+
+    if ! is_host_available; then
+        notify $hostname "Ping failed!"
+    fi
 
     if [ "$check_slow_server" ]; then
         check_slow_server
@@ -145,6 +153,20 @@ function debug () {
     if [ "$debug_mode" ]; then
         echo $__message
     fi
+}
+
+function has_internet_connection () {
+    local __tmp=$hostname
+    hostname="8.8.8.8"
+
+    if is_host_available; then
+        hostname=$__tmp;
+        return 0
+    else
+        hostname=$__tmp;
+        return 1
+    fi
+
 }
 
 # Set default options
